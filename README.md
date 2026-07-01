@@ -66,9 +66,13 @@ Node.js host (a VPS, Railway, Render, etc.) — nothing platform-specific is req
 ```bash
 npm install          # installs client/ and server/ deps (root postinstall hook)
 npm run build         # builds client/ → client/dist
-npm run seed          # creates the first admin account (once) — see below
-npm start              # NODE_ENV=production node server/index.js
+npm start              # seeds the admin account (idempotent) then starts the server
 ```
+
+`npm start` runs `npm run seed` first — safe to run on every boot/redeploy, since it
+only creates the admin account or seed content when they don't already exist yet. That
+means a host with no shell access (Railway, Render, …) still gets a working `admin`/`admin`
+login on the very first deploy, with zero manual one-off commands required.
 
 Set `NODE_ENV=production` (most hosts do this automatically) so the server (a) marks the
 auth cookie `secure` and (b) serves `client/dist` + falls back to `index.html` for
@@ -90,10 +94,29 @@ host's environment settings (no `.env` file needed either way):
 | `ADMIN_USER`  | `admin`                          | used by `npm run seed`                    |
 | `ADMIN_PASS`  | `admin`                          | used by `npm run seed` — change for real use |
 
-The SQLite file and uploads folder are git-ignored; a fresh clone + `npm run seed` +
-`npm start` recreates everything the app needs.
+The SQLite file and uploads folder are git-ignored; a fresh clone + `npm install` +
+`npm run build` + `npm start` recreates everything the app needs.
 
-### Hosting notes
+### Deploying on Railway
+
+1. **New Project → Deploy from GitHub repo**, pick this repo. Leave the root directory
+   as `/` (repo root) — Railway's Nixpacks builder auto-detects the `build` and `start`
+   scripts from the root `package.json`, so no custom build/start command is needed.
+2. **Variables** tab — set at minimum:
+   - `NODE_ENV=production`
+   - `JWT_SECRET` — a long random string (Railway can generate one)
+   - optionally `ADMIN_USER` / `ADMIN_PASS` if you don't want the `admin`/`admin` default
+   - (`PORT` is injected automatically by Railway — the app already reads `process.env.PORT`, don't set it yourself)
+3. **Attach a Volume** (Settings → Volumes) — e.g. mounted at `/data` — then set:
+   - `DB_PATH=/data/db.sqlite`
+   - `UPLOAD_DIR=/data/uploads`
+   
+   Without this, the SQLite file and any uploaded photos are wiped on every redeploy —
+   Railway's default filesystem is not persistent across deploys.
+4. Deploy. Railway gives you a `*.up.railway.app` HTTPS domain automatically, which
+   satisfies the `secure` cookie requirement below.
+
+### Hosting notes (any platform)
 
 - **Native module**: `better-sqlite3` compiles a native binding — install (`npm install`)
   on the target platform/architecture rather than copying `node_modules` from your machine.
@@ -104,6 +127,9 @@ The SQLite file and uploads folder are git-ignored; a fresh clone + `npm run see
 - **HTTPS**: the auth cookie is marked `secure` in production, so the site must be served
   over HTTPS (or `localhost`, which browsers treat as secure). Any host that terminates
   TLS at the edge (Railway, Render, most VPS + reverse proxy setups) satisfies this.
+- **Not Vercel**: Vercel's serverless functions have an ephemeral filesystem — the SQLite
+  DB and uploaded photos would be wiped between invocations. This app needs a host that
+  runs a persistent Node process with attachable disk (Railway, Render, a VPS, Fly.io).
 
 ## Admin panel
 
