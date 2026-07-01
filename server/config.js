@@ -1,10 +1,18 @@
 // Central configuration. Everything is overridable via environment variables so the
 // same code runs locally and in any host, but sensible local defaults mean you can
 // `npm install && npm run seed && npm start` with zero setup.
+//
+// Loads `server/.env` if present (see `.env.example` for the full list of vars).
+// Hosting platforms that inject env vars directly (Railway, Render, etc.) don't need
+// a `.env` file at all — this is a no-op when one isn't found.
+import 'dotenv/config'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+export const NODE_ENV = process.env.NODE_ENV || 'development'
+export const IS_PRODUCTION = NODE_ENV === 'production'
 
 export const PORT = Number(process.env.PORT) || 4000
 
@@ -20,5 +28,7 @@ export const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'db.sqlite')
 export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads')
 
 // Default admin credentials used by `npm run seed` when none are supplied.
+// Deliberately simple ("admin" / "admin") for a frictionless first deploy —
+// change ADMIN_PASS (and re-seed) before handing the site to a real client.
 export const SEED_ADMIN_USER = process.env.ADMIN_USER || 'admin'
-export const SEED_ADMIN_PASS = process.env.ADMIN_PASS || 'admin123'
+export const SEED_ADMIN_PASS = process.env.ADMIN_PASS || 'admin'

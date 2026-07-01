@@ -1,7 +1,13 @@
 // SQLite layer (better-sqlite3 — synchronous, single file, perfect for this scale).
 // The schema is created on first run, so there is no separate migration step.
 import Database from 'better-sqlite3'
+import fs from 'node:fs'
+import path from 'node:path'
 import { DB_PATH } from './config.js'
+
+// Auto-create the DB file's parent directory (e.g. a custom DB_PATH pointing at a
+// not-yet-existing mounted volume) so a fresh deploy never crashes on a missing folder.
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
 
 const db = new Database(DB_PATH)
 db.pragma('journal_mode = WAL')

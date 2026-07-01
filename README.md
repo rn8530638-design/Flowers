@@ -34,9 +34,9 @@ npm start        # → http://localhost:4000
 
 **First admin user** — created by the seed script. Defaults:
 
-| username | password   |
-|----------|------------|
-| `admin`  | `admin123` |
+| username | password |
+|----------|----------|
+| `admin`  | `admin`  |
 
 Override them on the first seed via env vars:
 
@@ -56,6 +56,54 @@ npm run dev      # → http://localhost:5173
 
 - Public site: <http://localhost:5173/>
 - Admin panel: <http://localhost:5173/admin>  (redirects to `/admin/login` when logged out)
+
+## Production deploy
+
+The app runs as a **single Node process**: the Express server serves the built React
+bundle, the `/api/*` routes, and `/uploads/*` all from one port. Works on any standard
+Node.js host (a VPS, Railway, Render, etc.) — nothing platform-specific is required.
+
+```bash
+npm install          # installs client/ and server/ deps (root postinstall hook)
+npm run build         # builds client/ → client/dist
+npm run seed          # creates the first admin account (once) — see below
+npm start              # NODE_ENV=production node server/index.js
+```
+
+Set `NODE_ENV=production` (most hosts do this automatically) so the server (a) marks the
+auth cookie `secure` and (b) serves `client/dist` + falls back to `index.html` for
+`/admin` and any client-side route. Without it, the server only exposes the API —
+useful for local dev where Vite's dev server handles the frontend instead.
+
+### Environment variables
+
+Copy `server/.env.example` to `server/.env` and adjust, or set these directly in your
+host's environment settings (no `.env` file needed either way):
+
+| Var           | Default                        | Notes                                   |
+|---------------|---------------------------------|------------------------------------------|
+| `NODE_ENV`    | `development`                   | set to `production` for a real deploy    |
+| `PORT`        | `4000`                          | port Express listens on                  |
+| `JWT_SECRET`  | dev placeholder                 | **change this** — signs the login session |
+| `DB_PATH`     | `server/db.sqlite`               | auto-created on first run if missing      |
+| `UPLOAD_DIR`  | `server/uploads`                 | auto-created on first run if missing      |
+| `ADMIN_USER`  | `admin`                          | used by `npm run seed`                    |
+| `ADMIN_PASS`  | `admin`                          | used by `npm run seed` — change for real use |
+
+The SQLite file and uploads folder are git-ignored; a fresh clone + `npm run seed` +
+`npm start` recreates everything the app needs.
+
+### Hosting notes
+
+- **Native module**: `better-sqlite3` compiles a native binding — install (`npm install`)
+  on the target platform/architecture rather than copying `node_modules` from your machine.
+- **Persistent disk**: the SQLite file and `server/uploads/` must live on storage that
+  survives restarts/redeploys. Most PaaS platforms wipe the local filesystem on each
+  deploy — if so, point `DB_PATH`/`UPLOAD_DIR` at a mounted persistent volume (Railway
+  volumes, Render disks, etc.), or attach one before going live.
+- **HTTPS**: the auth cookie is marked `secure` in production, so the site must be served
+  over HTTPS (or `localhost`, which browsers treat as secure). Any host that terminates
+  TLS at the edge (Railway, Render, most VPS + reverse proxy setups) satisfies this.
 
 ## Admin panel
 

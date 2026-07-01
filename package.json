@@ -1,0 +1,14 @@
+{
+  "name": "flowers",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Flowers — public site + admin panel. Orchestrates the client/ (Vite) and server/ (Express) sub-projects for a single-command build/start.",
+  "scripts": {
+    "postinstall": "npm install --prefix client && npm install --prefix server",
+    "build": "npm run build --prefix client",
+    "seed": "npm run seed --prefix server",
+    "start": "npm start --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "dev:server": "npm run dev --prefix server"
+  }
+}

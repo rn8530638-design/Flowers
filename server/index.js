@@ -9,9 +9,14 @@ import multer from 'multer'
 import bcrypt from 'bcryptjs'
 import fs from 'node:fs'
 import path from 'node:path'
-import { PORT, UPLOAD_DIR, COOKIE_NAME } from './config.js'
+import { fileURLToPath } from 'node:url'
+import { PORT, UPLOAD_DIR, COOKIE_NAME, IS_PRODUCTION } from './config.js'
 import db, { serializeFlower, serializeFeature } from './db.js'
 import { signToken, setAuthCookie, clearAuthCookie, readAdmin, requireAuth } from './auth.js'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// The Vite build output (client/ is a sibling of server/ — see repo layout in README).
+const CLIENT_DIST = path.join(__dirname, '../client/dist')
 
 const app = express()
 app.use(express.json())
@@ -220,6 +225,23 @@ app.delete('/api/features/:id', requireAuth, (req, res) => {
   db.prepare('DELETE FROM features WHERE id = ?').run(existing.id)
   res.json({ ok: true })
 })
+
+// ----- production: serve the built React app from the same process/port ----
+// `npm run build` (client/) outputs to client/dist; in production we serve it
+// directly so the public site, /admin panel, and this API all run from one port.
+// The client does its own path-based routing (see client/src/main.jsx), so every
+// non-API, non-upload route just gets index.html and the bundle takes it from there.
+if (IS_PRODUCTION) {
+  if (fs.existsSync(CLIENT_DIST)) {
+    app.use(express.static(CLIENT_DIST))
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next()
+      res.sendFile(path.join(CLIENT_DIST, 'index.html'))
+    })
+  } else {
+    console.warn(`⚠ NODE_ENV=production but ${CLIENT_DIST} was not found — run "npm run build" in client/ first.`)
+  }
+}
 
 // Multer / generic error handler → JSON (so the frontend always gets a message).
 app.use((err, _req, res, _next) => {
