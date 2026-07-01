@@ -1,7 +1,29 @@
 /* ===== Global styles ported verbatim from the original bundled <style> block ===== */
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: #F2F9F4; }
+
+/* Belt-and-braces against horizontal overflow on small screens */
+html, body { max-width: 100%; overflow-x: hidden; }
+/* Media never forces the viewport wider than itself */
+img, svg, video { max-width: 100%; }
+
+/* Kill the 300ms tap delay and make taps feel instant on touch devices */
+a, button, [role="button"], input, textarea, select { touch-action: manipulation; }
+
+/* Utility: horizontal scroll container with hidden scrollbar (mobile pill nav) */
+.hscroll { scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch; }
+.hscroll::-webkit-scrollbar { display: none; }
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
 
 @keyframes floatUp {
   0%, 100% { transform: translateY(0); }

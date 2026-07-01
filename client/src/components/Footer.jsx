@@ -7,7 +7,9 @@ const socialA = { width: 63, height: 63, borderRadius: '50%', border: '1px solid
 
 const Footer = forwardRef(function Footer(props, ref) {
   const isMobile = useMediaQuery('(max-width:760px)')
-  const footGridCols = isMobile ? '1fr 1fr' : '1.4fr 1fr 1fr 1fr'
+  const isTablet = useMediaQuery('(max-width:880px)')
+  // Phones: single column. Tablet: two columns. Desktop: the original four.
+  const footGridCols = isMobile ? '1fr' : isTablet ? '1fr 1fr' : '1.4fr 1fr 1fr 1fr'
 
   return (
     <footer id="kontakty" ref={ref} style={{ background: '#2E3D32', color: '#EAF4EC', padding: 'clamp(108px,16vh,180px) 0 66px', position: 'relative', overflow: 'hidden' }}>
@@ -27,7 +29,7 @@ const Footer = forwardRef(function Footer(props, ref) {
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 clamp(20px,5vw,56px)', position: 'relative', zIndex: 1 }}>
         <Reveal style={{ width: '100%', margin: '0 auto clamp(84px,9vh,135px)' }}>
-          <h2 style={{ margin: 0, fontFamily: "'Cormorant Garamond',serif", fontWeight: 500, fontSize: 'clamp(57px,7vw,108px)', lineHeight: 1.12, color: '#F4FBF4', textAlign: 'center', letterSpacing: '.01em' }}>
+          <h2 style={{ margin: 0, fontFamily: "'Cormorant Garamond',serif", fontWeight: 500, fontSize: 'clamp(34px,7vw,108px)', lineHeight: 1.14, color: '#F4FBF4', textAlign: 'center', letterSpacing: '.01em' }}>
             Дарите цветы — дарите <span style={{ color: '#E79BAE' }}>настроение</span>.
           </h2>
         </Reveal>
@@ -54,7 +56,7 @@ const Footer = forwardRef(function Footer(props, ref) {
             <a href="mailto:hello@flowers.ru" style={{ display: 'block', textDecoration: 'none', color: '#F4FBF4', fontSize: 25, fontWeight: 500 }}>hello@flowers.ru</a>
             <div style={{ marginTop: 33, paddingTop: 27, borderTop: '1px solid rgba(234,244,236,.1)' }}>
               <p style={{ margin: '0 0 15px', fontSize: 16, letterSpacing: '.06em', color: 'rgba(234,244,236,.36)' }}>Будьте в курсе скидок</p>
-              <a href="#" style={{ display: 'inline-block', textDecoration: 'none', color: '#2E3D32', background: '#E79BAE', fontSize: 18, fontWeight: 600, padding: '12px 33px', borderRadius: 99, letterSpacing: '.04em', boxShadow: '0 6px 18px rgba(231,155,174,.3)' }}>Подписаться</a>
+              <a href="https://t.me/BrightLabRu" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 46, textDecoration: 'none', color: '#2E3D32', background: '#E79BAE', fontSize: 18, fontWeight: 600, padding: '13px 33px', borderRadius: 99, letterSpacing: '.04em', boxShadow: '0 6px 18px rgba(231,155,174,.3)' }}>Подписаться</a>
             </div>
           </div>
 

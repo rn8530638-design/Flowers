@@ -29,6 +29,19 @@ const FlowerCarousel = forwardRef(function FlowerCarousel(props, ref) {
   const animating = useRef(false)
   const isTablet = useMediaQuery('(max-width:880px)')
 
+  // Touch swipe (mobile): horizontal drag past a threshold flips the slide, while
+  // vertical drags fall through to normal page scrolling.
+  const touchStart = useRef(null)
+  const onTouchStart = (e) => { const t = e.touches[0]; touchStart.current = { x: t.clientX, y: t.clientY } }
+  const onTouchEnd = (e) => {
+    if (!touchStart.current) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - touchStart.current.x
+    const dy = t.clientY - touchStart.current.y
+    touchStart.current = null
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) go(dx < 0 ? i + 1 : i - 1)
+  }
+
   useEffect(() => {
     let alive = true
     fetch('/api/flowers')
@@ -90,6 +103,7 @@ const FlowerCarousel = forwardRef(function FlowerCarousel(props, ref) {
           `cover` — trimming ONLY the empty green padding (never a stem), so the stem ends with
           a small natural margin instead of floating above a large gap. The box sits over the
           matching per-slide green gradient base (cur.bgTop→cur.bgBot), so the crop edge is invisible. */}
+      {!isTablet && (
       <div
         id="flowerStage"
         aria-label={cur.name}
@@ -107,6 +121,7 @@ const FlowerCarousel = forwardRef(function FlowerCarousel(props, ref) {
           WebkitMaskImage: 'linear-gradient(180deg,#000 0%,#000 95%,transparent 100%)',
         }}
       />
+      )}
 
       {/* side "green-wash": paints the slide's own green over the left/right edges so the
           text columns always read as sitting BESIDE the flower (on green), never on top of it,
@@ -127,7 +142,16 @@ const FlowerCarousel = forwardRef(function FlowerCarousel(props, ref) {
       )}
 
       <div style={{ position: 'relative', zIndex: 2, maxWidth: isTablet ? 1280 : 1600, margin: '0 auto', padding: isTablet ? '0 clamp(20px,5vw,56px)' : '0 clamp(32px,3.5vw,64px)' }}>
-        <Reveal style={{ textAlign: 'center', marginBottom: 'clamp(48px,8vh,90px)' }}>
+        <Reveal
+          style={{
+            textAlign: 'center',
+            // Mobile: pull the label+title up toward the top of the section (less dead
+            // space above it), then keep only a tight gap before the flower image so the
+            // whole stack below reads as one compact block.
+            marginTop: isTablet ? 'calc(-1 * clamp(40px,7vh,64px))' : 0,
+            marginBottom: isTablet ? 'clamp(18px,3vh,30px)' : 'clamp(48px,8vh,90px)',
+          }}
+        >
           <span style={{ display: 'inline-block', fontSize: 20, fontWeight: 600, letterSpacing: '.28em', textTransform: 'uppercase', color: '#7d9a82', marginBottom: 21 }}>
             Ассортимент
           </span>
@@ -136,71 +160,139 @@ const FlowerCarousel = forwardRef(function FlowerCarousel(props, ref) {
           </h2>
         </Reveal>
 
-        <Reveal>
-          <div
-            style={{
-              position: 'relative', display: 'grid',
-              gridTemplateColumns: isTablet ? '1fr' : 'minmax(0,0.92fr) minmax(0,1.55fr) minmax(0,0.92fr)',
-              gap: 'clamp(24px,3vw,66px)', alignItems: 'center', minHeight: 'clamp(620px,80vh,920px)',
-            }}
-          >
-            {/* LEFT: name + description */}
-            <div
-              style={{
-                position: 'relative', zIndex: 2, minWidth: 0,
-                textAlign: isTablet ? 'center' : 'left',
-                display: isTablet ? 'flex' : 'block',
-                flexDirection: 'column', alignItems: isTablet ? 'center' : 'flex-start',
-              }}
-            >
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14, fontSize: 18, fontWeight: 600, letterSpacing: '.2em', textTransform: 'uppercase', color: cur.accent }}>
-                <span style={{ width: 39, height: 2, background: cur.accent, display: 'inline-block' }} />
-                {cur.latin}
-              </span>
-              <h3 style={{ margin: '24px 0 27px', fontFamily: "'Cormorant Garamond',serif", fontWeight: 600, fontSize: 'clamp(68px,9vw,114px)', lineHeight: 0.96, color: '#2E3D32' }}>
-                {cur.name}
-              </h3>
-              <p style={{ margin: 0, fontSize: 24, lineHeight: 1.75, color: '#46563f', maxWidth: '34ch', textWrap: 'pretty' }}>
-                {cur.desc}
-              </p>
-              <div style={{ display: 'flex', gap: 21, marginTop: 50 }}>
-                <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 51, fontWeight: 600, color: cur.accent, lineHeight: 1 }}>{curNum}</span>
-                <span style={{ alignSelf: 'flex-end', fontSize: 20, letterSpacing: '.16em', color: '#7d8c7f', paddingBottom: 9 }}>/ {total}</span>
-              </div>
-            </div>
-
-            {/* CENTER: empty — flower shows through from the background. Holds nav arrows. */}
-            <div style={{ position: 'relative', alignSelf: 'stretch' }}>
-              <button data-prev aria-label="Предыдущий" onClick={() => go(i - 1)} style={{ ...arrowBtn, left: 0 }}>
-                <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#2E3D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-              </button>
-              <button data-next aria-label="Следующий" onClick={() => go(i + 1)} style={{ ...arrowBtn, right: 0 }}>
-                <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#2E3D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-              </button>
-            </div>
-
-            {/* RIGHT: fact (frosted glass) */}
-            <div style={{ position: 'relative', zIndex: 2, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: isTablet ? 'center' : 'flex-start' }}>
+        {isTablet ? (
+          /* ---- MOBILE / TABLET: stacked — flower image, then name+desc, then fact ---- */
+          <Reveal>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(14px,2.4vh,22px)' }}>
+              {/* flower photo — zoomed background crop so the bloom+stem dominate the frame
+                  (the source PNGs are mostly empty green padding). We scale past that padding and
+                  crop to just below the stem tip (cur.stemEnd), mirroring the desktop treatment.
+                  Swipe left/right to navigate. */}
               <div
+                onTouchStart={onTouchStart}
+                onTouchEnd={onTouchEnd}
                 style={{
-                  maxWidth: '100%', padding: '42px 45px', borderRadius: 36, background: 'rgba(255,255,255,.24)',
-                  backdropFilter: 'blur(20px) saturate(1.3)', WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
-                  boxShadow: '0 20px 50px rgba(46,61,50,.18)', border: '1px solid rgba(255,255,255,.5)',
+                  position: 'relative', width: '100%', maxWidth: 460, borderRadius: 28, overflow: 'hidden',
+                  background: bgGradient, touchAction: 'pan-y',
                 }}
               >
-                <span style={{ display: 'block', fontSize: 18, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: cur.accent, marginBottom: 21 }}>
+                <div
+                  role="img"
+                  aria-label={cur.name}
+                  style={{
+                    width: '100%', height: 'clamp(360px,52vh,460px)',
+                    backgroundImage: `url('${cur.img}')`,
+                    // Height % > 100 zooms in; derived from the flower's vertical extent
+                    // (top of bloom ≈ 0.14 down to the stem tip) so the bloom fills the frame.
+                    backgroundSize: `auto ${Math.round(100 / ((cur.stemEnd ?? 0.86) - 0.14))}%`,
+                    backgroundPosition: 'center 42%',
+                    backgroundRepeat: 'no-repeat',
+                    opacity: bgOpacity, transition: 'opacity .42s ease',
+                  }}
+                />
+                <button data-prev aria-label="Предыдущий" onClick={() => go(i - 1)} style={{ ...arrowBtn, width: 52, height: 52, left: 8 }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E3D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                </button>
+                <button data-next aria-label="Следующий" onClick={() => go(i + 1)} style={{ ...arrowBtn, width: 52, height: 52, right: 8 }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E3D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                </button>
+              </div>
+
+              {/* name + description */}
+              <div style={{ textAlign: 'center', width: '100%', maxWidth: 560 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontSize: 15, fontWeight: 600, letterSpacing: '.2em', textTransform: 'uppercase', color: cur.accent }}>
+                  <span style={{ width: 30, height: 2, background: cur.accent, display: 'inline-block' }} />
+                  {cur.latin}
+                </span>
+                <h3 style={{ margin: '8px 0 10px', fontFamily: "'Cormorant Garamond',serif", fontWeight: 600, fontSize: 'clamp(46px,12vw,72px)', lineHeight: 0.98, color: '#2E3D32' }}>
+                  {cur.name}
+                </h3>
+                <p style={{ margin: '0 auto', fontSize: 'clamp(16px,4.4vw,19px)', lineHeight: 1.65, color: '#46563f', maxWidth: '38ch', textWrap: 'pretty' }}>
+                  {cur.desc}
+                </p>
+                <div style={{ display: 'flex', gap: 14, marginTop: 14, justifyContent: 'center', alignItems: 'flex-end' }}>
+                  <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 40, fontWeight: 600, color: cur.accent, lineHeight: 1 }}>{curNum}</span>
+                  <span style={{ fontSize: 16, letterSpacing: '.16em', color: '#7d8c7f', paddingBottom: 6 }}>/ {total}</span>
+                </div>
+              </div>
+
+              {/* fact (frosted glass) */}
+              <div
+                style={{
+                  width: '100%', maxWidth: 560, padding: 'clamp(24px,6vw,34px)', borderRadius: 28, background: 'rgba(255,255,255,.3)',
+                  backdropFilter: 'blur(20px) saturate(1.3)', WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+                  boxShadow: '0 20px 50px rgba(46,61,50,.16)', border: '1px solid rgba(255,255,255,.5)',
+                }}
+              >
+                <span style={{ display: 'block', fontSize: 15, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: cur.accent, marginBottom: 14 }}>
                   Интересный факт
                 </span>
-                <p style={{ margin: 0, fontSize: 24, lineHeight: 1.72, color: '#243029', fontWeight: 500, textWrap: 'pretty' }}>
+                <p style={{ margin: 0, fontSize: 'clamp(16px,4.4vw,19px)', lineHeight: 1.6, color: '#243029', fontWeight: 500, textWrap: 'pretty' }}>
                   {cur.fact}
                 </p>
               </div>
             </div>
-          </div>
-        </Reveal>
+          </Reveal>
+        ) : (
+          <Reveal>
+            <div
+              style={{
+                position: 'relative', display: 'grid',
+                gridTemplateColumns: 'minmax(0,0.92fr) minmax(0,1.55fr) minmax(0,0.92fr)',
+                gap: 'clamp(24px,3vw,66px)', alignItems: 'center', minHeight: 'clamp(620px,80vh,920px)',
+              }}
+            >
+              {/* LEFT: name + description */}
+              <div style={{ position: 'relative', zIndex: 2, minWidth: 0, textAlign: 'left' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14, fontSize: 18, fontWeight: 600, letterSpacing: '.2em', textTransform: 'uppercase', color: cur.accent }}>
+                  <span style={{ width: 39, height: 2, background: cur.accent, display: 'inline-block' }} />
+                  {cur.latin}
+                </span>
+                <h3 style={{ margin: '24px 0 27px', fontFamily: "'Cormorant Garamond',serif", fontWeight: 600, fontSize: 'clamp(68px,9vw,114px)', lineHeight: 0.96, color: '#2E3D32' }}>
+                  {cur.name}
+                </h3>
+                <p style={{ margin: 0, fontSize: 24, lineHeight: 1.75, color: '#46563f', maxWidth: '34ch', textWrap: 'pretty' }}>
+                  {cur.desc}
+                </p>
+                <div style={{ display: 'flex', gap: 21, marginTop: 50 }}>
+                  <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 51, fontWeight: 600, color: cur.accent, lineHeight: 1 }}>{curNum}</span>
+                  <span style={{ alignSelf: 'flex-end', fontSize: 20, letterSpacing: '.16em', color: '#7d8c7f', paddingBottom: 9 }}>/ {total}</span>
+                </div>
+              </div>
+
+              {/* CENTER: empty — flower shows through from the background. Holds nav arrows. */}
+              <div style={{ position: 'relative', alignSelf: 'stretch' }}>
+                <button data-prev aria-label="Предыдущий" onClick={() => go(i - 1)} style={{ ...arrowBtn, left: 0 }}>
+                  <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#2E3D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                </button>
+                <button data-next aria-label="Следующий" onClick={() => go(i + 1)} style={{ ...arrowBtn, right: 0 }}>
+                  <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#2E3D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                </button>
+              </div>
+
+              {/* RIGHT: fact (frosted glass) */}
+              <div style={{ position: 'relative', zIndex: 2, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div
+                  style={{
+                    maxWidth: '100%', padding: '42px 45px', borderRadius: 36, background: 'rgba(255,255,255,.24)',
+                    backdropFilter: 'blur(20px) saturate(1.3)', WebkitBackdropFilter: 'blur(20px) saturate(1.3)',
+                    boxShadow: '0 20px 50px rgba(46,61,50,.18)', border: '1px solid rgba(255,255,255,.5)',
+                  }}
+                >
+                  <span style={{ display: 'block', fontSize: 18, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: cur.accent, marginBottom: 21 }}>
+                    Интересный факт
+                  </span>
+                  <p style={{ margin: 0, fontSize: 24, lineHeight: 1.72, color: '#243029', fontWeight: 500, textWrap: 'pretty' }}>
+                    {cur.fact}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        )}
 
         {/* dots */}
-        <Reveal offset={20} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 18, marginTop: 'clamp(54px,8vh,84px)' }}>
+        <Reveal offset={20} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 18, marginTop: isTablet ? 'clamp(22px,3.6vh,36px)' : 'clamp(54px,8vh,84px)' }}>
           {flowers.map((fl, idx) => (
             <button
               key={fl.name}

@@ -79,8 +79,9 @@ export default function Header({ ctaColor = '#F4C2C8' }) {
               <button
                 id="burger"
                 aria-label="Меню"
+                aria-expanded={menuOpen}
                 onClick={() => setMenuOpen(true)}
-                style={{ display: 'flex', flexDirection: 'column', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 6 }}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, width: 44, height: 44, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
                 <span style={{ width: 24, height: 2, background: '#2E3D32', borderRadius: 2, display: 'block' }} />
                 <span style={{ width: 24, height: 2, background: '#2E3D32', borderRadius: 2, display: 'block' }} />
@@ -101,24 +102,26 @@ export default function Header({ ctaColor = '#F4C2C8' }) {
           pointerEvents: menuOpen ? 'auto' : 'none', transition: 'opacity .35s ease',
         }}
       >
-        <div
+        <button
           className="mclose"
+          aria-label="Закрыть меню"
           onClick={() => setMenuOpen(false)}
-          style={{ position: 'absolute', top: 24, right: 28, fontSize: 34, lineHeight: 1, color: '#2E3D32', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: 16, right: 16, width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, lineHeight: 1, color: '#2E3D32', background: 'none', border: 'none', cursor: 'pointer' }}
         >
           ×
-        </div>
+        </button>
         {[
           ['#top', 'Главная'],
           ['#assortiment', 'Ассортимент'],
           ['#o-nas', 'О нас'],
+          ['#features', 'Почему мы'],
           ['#kontakty', 'Контакты'],
         ].map(([href, label]) => (
           <a
             key={href}
             href={href}
             onClick={() => setMenuOpen(false)}
-            style={{ textDecoration: 'none', color: '#2E3D32', fontFamily: "'Cormorant Garamond',serif", fontSize: 32, fontWeight: 600 }}
+            style={{ display: 'flex', alignItems: 'center', minHeight: 48, padding: '0 16px', textDecoration: 'none', color: '#2E3D32', fontFamily: "'Cormorant Garamond',serif", fontSize: 32, fontWeight: 600 }}
           >
             {label}
           </a>

@@ -24,11 +24,12 @@ const FALLBACK_CARDS = [
   { title: 'Долгая свежесть', description: 'В каждом заказе — средство для продления жизни цветов.', color_tint: 'blue' },
 ]
 
-function Deco({ type, stroke }) {
+function Deco({ type, stroke, scale = 1 }) {
   const common = { opacity: 0.09 }
+  const size = 144 * scale
   if (type === 'flower') {
     return (
-      <svg style={{ position: 'absolute', bottom: -24, right: -24, ...common }} width="144" height="144" viewBox="0 0 110 110" fill="none" stroke={stroke} strokeWidth="1.2" strokeLinecap="round">
+      <svg style={{ position: 'absolute', bottom: -24 * scale, right: -24 * scale, ...common }} width={size} height={size} viewBox="0 0 110 110" fill="none" stroke={stroke} strokeWidth="1.2" strokeLinecap="round">
         {[0, 72, 144, 216, 288].map((r) => <ellipse key={r} cx="55" cy="30" rx="9" ry="20" transform={`rotate(${r} 55 55)`} />)}
         <circle cx="55" cy="55" r="7" />
       </svg>
@@ -36,7 +37,7 @@ function Deco({ type, stroke }) {
   }
   if (type === 'leaf') {
     return (
-      <svg style={{ position: 'absolute', bottom: -20, right: -20, ...common }} width="144" height="144" viewBox="0 0 110 110" fill="none" stroke={stroke} strokeWidth="1.2" strokeLinecap="round">
+      <svg style={{ position: 'absolute', bottom: -20 * scale, right: -20 * scale, ...common }} width={size} height={size} viewBox="0 0 110 110" fill="none" stroke={stroke} strokeWidth="1.2" strokeLinecap="round">
         <path d="M70 90 Q40 70 36 40 Q60 20 80 44 Q88 68 70 90Z" />
         <path d="M70 90 Q54 65 36 40" />
         <path d="M56 52 Q62 46 72 48" />
@@ -46,14 +47,14 @@ function Deco({ type, stroke }) {
   }
   if (type === 'rose') {
     return (
-      <svg style={{ position: 'absolute', bottom: -22, right: -22, ...common }} width="144" height="144" viewBox="0 0 110 110" fill="none" stroke={stroke} strokeWidth="1.2" strokeLinecap="round">
+      <svg style={{ position: 'absolute', bottom: -22 * scale, right: -22 * scale, ...common }} width={size} height={size} viewBox="0 0 110 110" fill="none" stroke={stroke} strokeWidth="1.2" strokeLinecap="round">
         <path d="M55 55 Q62 48 68 55 Q74 62 67 70 Q58 78 48 70 Q36 60 44 48 Q52 36 66 38 Q82 40 84 58 Q84 78 68 86 Q50 94 36 82" />
       </svg>
     )
   }
   // daisy
   return (
-    <svg style={{ position: 'absolute', bottom: -22, right: -22, ...common }} width="144" height="144" viewBox="0 0 110 110" fill="none" stroke={stroke} strokeWidth="1.2" strokeLinecap="round">
+    <svg style={{ position: 'absolute', bottom: -22 * scale, right: -22 * scale, ...common }} width={size} height={size} viewBox="0 0 110 110" fill="none" stroke={stroke} strokeWidth="1.2" strokeLinecap="round">
       {[0, 45, 90, 135].map((r) => <ellipse key={r} cx="55" cy="34" rx="7" ry="16" transform={`rotate(${r} 55 55)`} />)}
       <circle cx="55" cy="55" r="8" />
     </svg>
@@ -106,7 +107,16 @@ const Features = forwardRef(function Features(props, ref) {
     const size = () => {
       const g = gapPx()
       const per = cpv()
-      const w = Math.max(300, (wrap.clientWidth - g * (per - 1)) / per)
+      let w
+      if (per === 1) {
+        // ~1.5 cards per view: first card fully visible, ~half of the next peeks
+        // in at the right edge as a scroll affordance.
+        w = (wrap.clientWidth - g) / 1.5
+        w = Math.max(180, Math.min(w, 260))
+      } else {
+        w = (wrap.clientWidth - g * (per - 1)) / per
+        w = Math.max(240, w)
+      }
       setCardWidth(w)
       stepRef.current = w + g
       updateArrows()
@@ -235,21 +245,24 @@ const Features = forwardRef(function Features(props, ref) {
             {cards.map((c, idx) => {
               const th = tintOf(c.color_tint)
               const num = String(idx + 1).padStart(2, '0')
+              const compact = cardWidth < 340 // narrow phone cards get tighter spacing/type
+              const ultra = cardWidth < 260 // ~1.5-per-view mobile cards: scale down further still
               return (
                 <div
                   key={c.id ?? idx}
                   style={{
-                    position: 'relative', overflow: 'hidden', background: th.bg, borderRadius: 34,
-                    padding: '54px 40px 64px', border: `1px solid ${th.border}`, boxShadow: `0 12px 38px ${th.shadow}`,
+                    position: 'relative', overflow: 'hidden', background: th.bg, borderRadius: ultra ? 22 : 34,
+                    padding: ultra ? '26px 20px 30px' : compact ? '40px 26px 46px' : '54px 40px 64px',
+                    border: `1px solid ${th.border}`, boxShadow: `0 12px 38px ${th.shadow}`,
                     flex: `0 0 ${cardWidth}px`, width: cardWidth, userSelect: 'none',
                   }}
                 >
-                  <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 90, fontWeight: 500, lineHeight: 1, color: th.num, marginBottom: 24, letterSpacing: '-.01em' }}>
+                  <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: ultra ? 44 : compact ? 68 : 90, fontWeight: 500, lineHeight: 1, color: th.num, marginBottom: ultra ? 10 : compact ? 16 : 24, letterSpacing: '-.01em' }}>
                     {num}
                   </div>
-                  <h3 style={{ margin: '0 0 16px', fontFamily: "'Cormorant Garamond',serif", fontWeight: 600, fontSize: 31, color: '#2E3D32' }}>{c.title}</h3>
-                  <p style={{ margin: 0, fontSize: 18, lineHeight: 1.72, color: '#5d6e60' }}>{c.description}</p>
-                  <Deco type={th.deco} stroke={th.stroke} />
+                  <h3 style={{ margin: ultra ? '0 0 8px' : '0 0 16px', fontFamily: "'Cormorant Garamond',serif", fontWeight: 600, fontSize: ultra ? 20 : compact ? 27 : 31, color: '#2E3D32' }}>{c.title}</h3>
+                  <p style={{ margin: 0, fontSize: ultra ? 13.5 : compact ? 16 : 18, lineHeight: ultra ? 1.5 : 1.72, color: '#5d6e60' }}>{c.description}</p>
+                  <Deco type={th.deco} stroke={th.stroke} scale={ultra ? 0.6 : 1} />
                 </div>
               )
             })}

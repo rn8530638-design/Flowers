@@ -8,10 +8,8 @@ dist/
 .playwright-mcp/
 *.log
 
-# throwaway QA screenshots taken during manual testing (real assets live in client/public/assets)
-/carousel-tulip.png
-/dashboard.png
-/form-filled.png
-/features-tab.png
-/features-public.png
-/features-public2.png
+# throwaway QA screenshots taken during manual testing.
+# Real image assets live in client/public/assets, so no root-level images are source.
+/*.png
+/*.jpg
+/*.jpeg

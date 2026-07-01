@@ -199,7 +199,31 @@
 @keyframes admSpin { to { transform: rotate(360deg) } }
 
 @media (max-width: 600px) {
-  .adm-card { grid-template-columns: auto 64px 1fr; }
+  /* card reflows to: grip | thumb/num | body  (actions drop to a full row below) */
+  .adm-card { grid-template-columns: auto 64px 1fr; gap: 14px; padding: 14px; }
   .adm-thumb { width: 64px; height: 64px; }
-  .adm-card-actions { grid-column: 2 / -1; justify-content: flex-start; }
+  .adm-num { width: 64px; font-size: 38px; }
+  .adm-card-body .name { font-size: 22px; }
+  .adm-card-body .desc { white-space: normal; max-width: none; }
+  .adm-card-actions { grid-column: 1 / -1; justify-content: stretch; gap: 10px; }
+  .adm-card-actions .adm-btn { flex: 1; justify-content: center; }
+
+  /* comfortable touch targets everywhere in the admin */
+  .adm-btn { min-height: 44px; padding: 12px 18px; }
+  .adm-input, .adm-textarea { font-size: 16px; } /* ≥16px avoids iOS focus zoom */
+  .adm-tint { min-height: 44px; }
+
+  /* avoid two stacked sticky bars overlapping: topbar scrolls away, tabs stick to top */
+  .adm-topbar { position: static; }
+  .adm-tabs-bar { top: 0; }
+
+  /* head + form stack cleanly */
+  .adm-head { flex-direction: column; align-items: stretch; gap: 14px; }
+  .adm-head .adm-btn--pink { width: 100%; justify-content: center; }
+
+  /* modal fills the small screen; action buttons go full-width and stack */
+  .adm-overlay { padding: 16px 12px; }
+  .adm-modal { border-radius: 18px; padding: 24px 18px; }
+  .adm-modal-actions { flex-direction: column-reverse; }
+  .adm-modal-actions .adm-btn { width: 100%; justify-content: center; }
 }
