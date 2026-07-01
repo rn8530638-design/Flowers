@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# playwright / temp artifacts
+.playwright-mcp/
+*.log
+
+# throwaway QA screenshots taken during manual testing (real assets live in client/public/assets)
+/carousel-tulip.png
+/dashboard.png
+/form-filled.png
+/features-tab.png
+/features-public.png
+/features-public2.png
